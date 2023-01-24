@@ -19,26 +19,26 @@ DEPS_PACMAN=( git atftp gcc make xz )
 # Check for package manager and dependencies
 check_dependencies() {
     # Check for package manager
-    if [ $(command -v apt-get) ]; then
+    if command -v apt-get > /dev/null 2>&1; then
         package_manager="dpkg -s"
         dependencies=("${DEPS_APT[@]}")
-    elif [ $(command -v dnf) ]; then
+    elif command -v dnf > /dev/null 2>&1; then
         package_manager="dnf list installed"
         dependencies=("${DEPS_DNF[@]}")
-    elif [ $(command -v pacman) ]; then
+    elif command -v pacman > /dev/null 2>&1; then
         package_manager="pacman -Q"
         dependencies=("${DEPS_PACMAN[@]}")
     else
-        echo "Could not check for dependencies. Continue? (y/n) " check
+        read -p "Could not check for dependencies. Continue? (y/n) " check
         if [ "$check" != "y" ]; then
             echo "Aborting..."
-            return
+            exit 1
         fi
     fi
 
     # Check for dependencies
     for p in "${dependencies[@]}"; do
-        if ! $package_manager $p >/dev/null 2>&1; then
+        if ! $package_manager $p > /dev/null 2>&1; then
             echo "$p not found: please install $p" 2>&1
             exit 1
         fi
