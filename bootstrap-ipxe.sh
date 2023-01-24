@@ -29,8 +29,11 @@ check_dependencies() {
         package_manager="pacman -Q"
         dependencies=("${DEPS_PACMAN[@]}")
     else
-        echo "Could not detect package manager"
-        exit 1
+        echo "Could not check for dependencies. Continue? (y/n) " check
+        if [ "$check" != "y" ]; then
+            echo "Aborting..."
+            return
+        fi
     fi
 
     # Check for dependencies
