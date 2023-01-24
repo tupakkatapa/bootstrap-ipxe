@@ -2,7 +2,7 @@
 
 A simple script for building and updating the iPXE firmware on a TFTP server. This script automates the process of building undionly.kpxe, embedding a chainloader script, and uploading it to the TFTP server.
 
-When building undionly.kpxe using this script, the following features are enabled: HTTPS, NFS, dynamic keyboard mapping, display of network interface information, reboot, and power off capabilities.
+When building undionly.kpxe using this script, the following features are enabled: HTTPS, NFS, dynamic keyboard mapping, ping, display of network interface information, reboot, and power off capabilities.
 
 To use this script, you will need to configure your DHCP server to hand out undionly.kpxe as the boot file.
 
