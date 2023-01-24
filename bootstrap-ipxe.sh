@@ -16,32 +16,36 @@ DEPS_APT=( git atftp gcc make liblzma-dev )
 DEPS_DNF=( git tftp gcc make xz-devel )
 DEPS_PACMAN=( git atftp gcc make xz )
 
-# Check for dependencies
-if [ $(command -v apt-get) ]; then
-  for p in "${DEPS_UBUNTU[@]}"; do
-    if ! dpkg -s $p >/dev/null 2>&1; then
-        echo "$p not found: please install $p" 2>&1
+# Check for package manager and dependencies
+check_dependencies() {
+    # Check for package manager
+    if [ $(command -v apt-get) ]; then
+        package_manager="dpkg -s"
+        dependencies=("${DEPS_APT[@]}")
+    elif [ $(command -v dnf) ]; then
+        package_manager="dnf list installed"
+        dependencies=("${DEPS_DNF[@]}")
+    elif [ $(command -v pacman) ]; then
+        package_manager="pacman -Q"
+        dependencies=("${DEPS_PACMAN[@]}")
+    else
+        echo "Could not detect package manager"
         exit 1
     fi
-  done
-elif [ $(command -v dnf) ]; then
-  for p in "${DEPS_FEDORA[@]}"; do
-    if ! dnf list installed $p >/dev/null 2>&1; then
-        echo "$p not found: please install $p" 2>&1
-        exit 1
-    fi
-  done
-elif [ $(command -v pacman) ]; then
-  for p in "${DEPS_ARCH[@]}"; do
-    if ! pacman -Q $p >/dev/null 2>&1; then
-        echo "$p not found: please install $p" 2>&1
-        exit 1
-    fi
-  done
-fi
-    
 
-# Upload file to the TFTP server
+    # Check for dependencies
+    for p in "${dependencies[@]}"; do
+        if ! $package_manager $p >/dev/null 2>&1; then
+            echo "$p not found: please install $p" 2>&1
+            exit 1
+        fi
+    done
+}
+
+# Call to check dependencies
+check_dependencies
+
+# Upload to TFTP
 upload_tftp () {
 
     # Check if undionly.kpxe exists
@@ -156,7 +160,6 @@ clean_files () {
 }
 
 # Menu
-# 1-2,4 fails 
 while true; do
     clear
     echo "==================================="
@@ -170,26 +173,24 @@ while true; do
     echo
     read -p "Enter your choice: " choice
 
-    # Check if choice has a dash
-    if [[ $choice == *"-"* ]]; then
-        # Split choice by dash
-        start=$(echo $choice | cut -f1 -d-)
-        end=$(echo $choice | cut -f2 -d-)
+    IFS=', ' read -r -a options <<< "$choice"
+    for option in "${options[@]}"; do
+        if [[ $option == *"-"* ]]; then
+            start=$(echo $option | cut -f1 -d-)
+            end=$(echo $option | cut -f2 -d-)
 
-        # Loop through options in range
-        for (( i = $start; i <= $end; i++ )); do
-            case $i in
-                1) compile_undionly;;
-                2) embed_chainloader;;
-                3) upload_tftp;;
-                4) clean_files;;
-                q) exit;;
-                *) echo "Invalid choice. Try again.";;
-            esac
-        done
-    else
-        # Split choice by comma and loop through each option
-        for option in $(echo $choice | tr ',' '\n'); do
+            # Loop through options in range
+            for (( i = $start; i <= $end; i++ )); do
+                case $i in
+                    1) compile_undionly;;
+                    2) embed_chainloader;;
+                    3) upload_tftp;;
+                    4) clean_files;;
+                    q) exit;;
+                    *) echo "Invalid choice. Try again.";;
+                esac
+            done
+        else
             case $option in
                 1) compile_undionly;;
                 2) embed_chainloader;;
@@ -198,7 +199,7 @@ while true; do
                 q) exit;;
                 *) echo "Invalid choice. Try again.";;
             esac
-        done
-    fi
-    read -p "Press enter to continue..."
+        fi
+        read -p "Press enter to continue..."
+    done
 done
