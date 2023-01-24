@@ -66,8 +66,8 @@ upload_tftp () {
 
     # Upload file to the TFTP server
     cd $DIR/ipxe/src/bin
-
-    if [ -f /etc/centos-release ]; then
+    
+    if [ $(command -v dnf) ]; then
         tftp -v "$TFTP_SERVER" -c put undionly.kpxe
     else
         atftp "$TFTP_SERVER" -p -l undionly.kpxe
