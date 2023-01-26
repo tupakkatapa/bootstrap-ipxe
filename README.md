@@ -38,6 +38,7 @@ q. Quit
 
 Enter your choice:
 ```
+3. TiP: You can use dashes and commas in the menu. eg. 1-3,q
 
 ## Links
 
