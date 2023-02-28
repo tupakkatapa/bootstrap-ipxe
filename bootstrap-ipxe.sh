@@ -137,20 +137,28 @@ embed_chainloader () {
         fi
     fi
 
-    # Create the script
+    # Prompt user for URL
     read -p "Enter URL for next boot stage (default: https://boot.netboot.xyz/): " URL
     URL=${URL:-"https://boot.netboot.xyz/"}
-    
-    echo "Creating chainloader script with URL: $URL"
-    cat >> $DIR/chainloader.ipxe << EOF
+
+    # Check if URL is valid
+    echo "Checking if URL is valid..."
+    if curl -sSL "$URL" | head -n1 | grep -q '^#!ipxe'; then
+        # URL is valid, create chainloader script
+        echo "Creating chainloader script with URL: $URL"
+        cat >> $DIR/chainloader.ipxe << EOF
 #!ipxe
 dhcp
 chain --autofree $URL || shell 
 EOF
-    
-    # Embed into binary
-    cd $DIR/ipxe/src
-    make -j bin/undionly.kpxe EMBED=$DIR/chainloader.ipxe
+        # Embed into binary
+        cd $DIR/ipxe/src
+        make -j bin/undionly.kpxe EMBED=$DIR/chainloader.ipxe
+    else
+        # URL is invalid, inform user and exit
+        echo "Invalid URL: $URL"
+        return
+    fi
 }
 
 # Remove all the files created by this script
