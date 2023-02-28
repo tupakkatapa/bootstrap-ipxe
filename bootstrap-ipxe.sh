@@ -64,7 +64,7 @@ upload_tftp () {
     # Check reachability
     if ! ping -c 1 "$TFTP_SERVER" &> /dev/null; then
         echo "Error: TFTP server is not reachable"
-        exit 1
+        return
     fi
 
     # Upload file to the TFTP server
