@@ -146,7 +146,7 @@ embed_chainloader () {
     if curl -sSL "$URL" | head -n1 | grep -q '^#!ipxe'; then
         # URL is valid, create chainloader script
         echo "Creating chainloader script with URL: $URL"
-        cat >> $DIR/chainloader.ipxe << EOF
+        cat > $DIR/chainloader.ipxe << EOF
 #!ipxe
 dhcp
 chain --autofree $URL || shell 
