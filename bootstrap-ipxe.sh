@@ -38,7 +38,7 @@ check_dependencies() {
 
     # Check for dependencies
     for p in "${dependencies[@]}"; do
-        if ! $package_manager $p > /dev/null 2>&1; then
+        if ! $package_manager "$p" > /dev/null 2>&1; then
             echo "$p not found: please install $p" 2>&1
             exit 1
         fi
@@ -68,7 +68,7 @@ upload_tftp () {
     fi
 
     # Upload file to the TFTP server
-    cd $DIR/ipxe/src/bin
+    cd "$DIR/ipxe/src/bin"
     
     if [ $(command -v dnf) ]; then
         tftp -v "$TFTP_SERVER" -c put undionly.kpxe
@@ -123,16 +123,11 @@ compile_undionly () {
 # It breaks the loop and give control to other ipxe script on given url.
 embed_chainloader () {
 
-    # Check if undionly.kpxe exists
-    if [ ! -f "$DIR/ipxe/src/bin/undionly.kpxe" ]; then
-        echo "Error: undionly.kpxe not found. Compile first."
-        return
-    fi
- 
     # Check if chainloader.ipxe exists
     if [ -f "$DIR/chainloader.ipxe" ]; then
         read -p "chainloader.ipxe exists. Overwrite? (y/n) " check
         if [ "$check" != "y" ]; then
+            embed_into_binary
             return
         fi
     fi
@@ -146,18 +141,30 @@ embed_chainloader () {
     if curl -sSL "$URL" | head -n1 | grep -q '^#!ipxe'; then
         # URL is valid, create chainloader script
         echo "Creating chainloader script with URL: $URL"
-        cat > $DIR/chainloader.ipxe << EOF
+        cat > "$DIR/chainloader.ipxe" << EOF
 #!ipxe
 dhcp
 chain --autofree $URL || shell 
 EOF
-        # Embed into binary
-        cd $DIR/ipxe/src
-        make -j bin/undionly.kpxe EMBED=$DIR/chainloader.ipxe
+        embed_into_binary
+
     else
         # URL is invalid, inform user and exit
         echo "Invalid URL: $URL"
         return
+    fi
+}
+
+# Function to embed the chainloader script into the binary
+embed_into_binary () {
+    # Check if undionly.kpxe exists
+    if [ ! -f "$DIR/ipxe/src/bin/undionly.kpxe" ]; then
+        echo "Error: undionly.kpxe not found. Compile first."
+        return
+    else
+        # Embed into binary
+        cd "$DIR/ipxe/src"
+        make -j bin/undionly.kpxe EMBED="$DIR/chainloader.ipxe"
     fi
 }
 
@@ -167,7 +174,7 @@ clean_files () {
     if [ "$check" != "y" ]; then
         return
     fi
-    rm -rf $DIR/ipxe $DIR/chainloader.ipxe
+    rm -rf "$DIR/ipxe" "$DIR/chainloader.ipxe"
 }
 
 # Menu
@@ -187,8 +194,8 @@ while true; do
     IFS=', ' read -r -a options <<< "$choice"
     for option in "${options[@]}"; do
         if [[ $option == *"-"* ]]; then
-            start=$(echo $option | cut -f1 -d-)
-            end=$(echo $option | cut -f2 -d-)
+            start=$(echo "$option" | cut -f1 -d-)
+            end=$(echo "$option" | cut -f2 -d-)
 
             # Loop through options in range
             for (( i = $start; i <= $end; i++ )); do
